@@ -1,0 +1,33 @@
+<?php
+/**
+ * @file
+ * Módulo Files Forcontu
+ * Este módulo prueba acciones con ficheros
+ */
+
+/**
+ * Implements hook_cron().
+ */
+function files_forcontu_cron() {
+  //Creamos, si no existe, la carpeta /sites/default/files/copias
+  $public_dir = 'public://copias';
+  if (!is_dir($public_dir)) {
+    file_prepare_directory($public_dir, FILE_CREATE_DIRECTORY);
+  }
+
+  //Buscamos los archivos en la carpeta private 
+  $private_dir = 'private://';
+  $files = array();
+  $files = file_scan_directory($private_dir, '/.*\.*$/');
+  $result = db_query('SELECT * FROM {file_managed} WHERE filesize>300000');
+  foreach ($result as $record) {
+    if (strpos($record->uri, $private_dir) !== FALSE) {
+      //si no está en la carpeta copias copiamos el fichero
+      if (!file_exists('sites/default/files/copias/' . $record->filename)) {
+        //drupal_set_message('FICHERO ' . $record->filename . ' NO EXISTE');
+        $file_to_copy = file_load($record->fid);
+        $file_copied = file_copy($record, $public_dir, FILE_EXISTS_REPLACE);
+      }
+    }
+  }
+}
