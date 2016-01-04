@@ -1,0 +1,70 @@
+<?php
+/**
+* @file
+* Módulo para probar la subida de ficheros
+* Este módulo crea la tabla files_forcontu
+*/
+
+/**
+ * Implements hook_install().
+ */
+function files_forcontu_install() {
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function files_forcontu_uninstall() {
+
+}
+
+/**
+ * Implements hook_schema().
+ */
+function files_forcontu_schema() {
+  $schema['files_forcontu'] = array(
+    'description' => 'Stores table files_forcontu',
+    'fields' => array(
+      'cid' => array(
+        'description' => 'Campo autoincremental para identificar el registro',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+      ),
+      'nombre' => array(
+        'description' => 'Nombre del autor del currículum',
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'length' => 20,
+      ),
+      'apellidos' => array(
+        'description' => 'Apellidos del autor del currículum',
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'length' => 40,
+      ),
+      'telefono' => array(
+        'description' => 'Teléfono del autor del currículum',
+        'type' => 'varchar',
+        'length' => 20,
+      ),
+      'email' => array(
+        'description' => 'Correo electrónico del autor del currículum',
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'length' => 40,
+      ),
+      'observaciones' => array(
+        'description' => 'Observaciones referentes al envío',
+        'type' => 'text',
+      ),
+      'fid' => array(
+        'description' => 'Identificador del fichero',
+        'type' => 'int',
+        'unsigned' => TRUE,
+      ),
+    ),
+    'primary key' => array('cid'),
+  );
+  return $schema;
+}

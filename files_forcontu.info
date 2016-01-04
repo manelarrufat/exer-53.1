@@ -2,4 +2,5 @@ name = Files Forcontu
 description = Módulo para probar operaciones con ficheros
 core = 7.x
 files[] = files_forcontu.module
+files[] = files_forcontu.install
 package = My modules

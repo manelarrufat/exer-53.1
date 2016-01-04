@@ -31,3 +31,141 @@ function files_forcontu_cron() {
     }
   }
 }
+
+/**
+ * Implements hook_menu().
+ */
+function files_forcontu_menu() {
+  $items['files_forcontu/upload'] = array(
+    'title' => t('Files Forcontu upload'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('files_forcontu_upload'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback
+ * Función que se invocará al cargar la página files_forcontu/upload
+ */
+function files_forcontu_upload($form_state) {
+  $form['datos_personales'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Datos personales',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['datos_personales']['nombre'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Nombre',
+    '#required' => TRUE,
+    '#description' => 'Escriba su nombre',
+    '#size' => 20,
+    '#maxlength' => 20,
+  );
+  $form['datos_personales']['apellidos'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Apellidos',
+    '#required' => TRUE,
+    '#description' => 'Escriba sus apellidos',
+    '#size' => 40,
+    '#maxlength' => 40,
+  );
+  $form['datos_personales']['telefono'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Teléfono',
+    '#description' => 'Escriba su teléfono',
+    '#size' => 20,
+    '#maxlength' => 20,
+  );
+  $form['datos_personales']['email'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Email',
+    '#required' => TRUE,
+    '#description' => 'Escriba su email',
+    '#size' => 40,
+    '#maxlength' => 40,
+  );
+  $form['curriculum_vitae'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Currículum vitae',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['curriculum_vitae']['observaciones'] = array(
+    '#type' => 'textarea',
+    '#title' => 'Observaciones',
+    '#rows' => 6,
+    '#cols' => 40,
+  );
+  $form['curriculum_vitae']['curriculum_pdf'] = array(
+    '#type' => 'file',
+    '#title' => 'Currículum en PDF',
+    '#description' => 'Sólo ficheros PDF',
+    '#size' => 40,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Enviar',
+  );
+
+  return $form;
+}
+
+/**
+ * Función de validación
+ */
+function files_forcontu_upload_validate($form, &$form_state) {
+  //validamos correo electrónico
+  if (!valid_email_address($form_state['values']['email'])) {
+    form_set_error('email', t('You must enter a valid e-mail address.'));
+  }
+
+  //validamos que el fichero tenga extensión pdf 
+  $extensions = 'pdf';
+  $validators = array('file_validate_extensions' => array($extensions));
+  $file = file_save_upload('curriculum_pdf', $validators);
+  if ($file === FALSE) {
+    form_set_error('curriculum_pdf', t('The file extension must be a PDF.'));
+  }
+  elseif ($file !== NULL) {
+    $form_state['values']['curriculum_pdf'] = $file;
+  }
+}
+
+/**
+ * Función de envío de formulario
+ */
+function files_forcontu_upload_submit($form, &$form_state) {
+  dpm($form_state);
+  //Guardamos datos del fichero en la tabla files_forcontu
+  $result = db_insert('files_forcontu')
+              ->fields(array(
+                'nombre' => $form_state['values']['nombre'],
+                'apellidos' => $form_state['values']['apellidos'],
+                'telefono' => $form_state['values']['telefono'],
+                'email' => $form_state['values']['email'],
+                'observaciones' => $form_state['values']['observaciones'],
+                'fid' => $form_state['values']['curriculum_pdf']->fid,
+              ))
+              ->execute();
+
+  //Movemos archivo a la carpeta curriculum
+  $public_dir = 'public://curriculum';
+  if (!is_dir($public_dir)) {
+    file_prepare_directory($public_dir, FILE_CREATE_DIRECTORY);
+  }
+  $file = $form_state['values']['curriculum_pdf'];
+  if ($file = file_move($file , $public_dir, FILE_EXISTS_RENAME)) {
+    //Cambiamos estado de archivo a permanente
+    $file->status = FILE_STATUS_PERMANENT;
+    file_save($file);
+    file_usage_add($file, 'files_forcontu', 'curriculum_pdf', $form_state['values']['curriculum_pdf']->fid);
+  }
+
+  drupal_set_message('Fichero subido correctamente');
+  drupal_goto('');
+}
